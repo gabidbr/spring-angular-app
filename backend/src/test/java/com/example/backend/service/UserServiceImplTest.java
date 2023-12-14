@@ -2,30 +2,22 @@ package com.example.backend.service;
 
 import com.example.backend.domain.User;
 import com.example.backend.domain.UserPrincipal;
-import com.example.backend.exception.domain.EmailExistsException;
-import com.example.backend.exception.domain.UserNotFoundException;
-import com.example.backend.exception.domain.UsernameExistsException;
 import com.example.backend.repository.UserRepository;
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.util.Collections;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 public class UserServiceImplTest {
@@ -53,27 +45,29 @@ public class UserServiceImplTest {
 
     @Test
     public void GetUsers_ReturnsListOfUsers() {
-        when(userRepository.findAll()).thenReturn(Collections.singletonList(new User()));
+        when(userRepository.findAll()).thenReturn(Collections.singletonList(sharedUser));
         List<User> users = userService.getUsers();
         assertEquals(1, users.size());
     }
 
     @Test
     public void FindUserByUsername_ReturnsUser() {
-        when(userRepository.findUserByUsername(Mockito.anyString())).thenReturn(new User());
-        User userByUsername = userService.findUserByUsername("Test");
+        when(userRepository.findUserByUsername(Mockito.anyString())).thenReturn(sharedUser);
+        User userByUsername = userService.findUserByUsername("testUser");
         assertNotNull(userByUsername);
+        assertEquals("testUser", sharedUser.getUsername());
     }
 
     @Test
     public void FindUserByEmail_ReturnsUser() {
         when(userRepository.findByEmail(Mockito.anyString())).thenReturn(new User());
-        User userByEmail = userService.findUserByEmail("Test");
+        User userByEmail = userService.findUserByEmail("testUser");
         assertNotNull(userByEmail);
+        assertEquals(1L, sharedUser.getId());
     }
 
     @Test
-    public void loadUserByUsername_UserFound_ReturnsUserPrincipal() {
+    public void LoadUserByUsername_UserFound_ReturnsUserPrincipal() {
         when(userRepository.findUserByUsername(Mockito.anyString())).thenReturn(sharedUser);
         UserPrincipal userPrincipal = (UserPrincipal) userService.loadUserByUsername("testUser");
         assertNotNull(userPrincipal);
@@ -81,8 +75,26 @@ public class UserServiceImplTest {
     }
 
     @Test
-    public void loadUserByUsername_UserNotFound_ThrowsUsernameNotFoundException() {
+    public void LoadUserByUsername_UserNotFound_ThrowsUsernameNotFoundException() {
         when(userRepository.findUserByUsername(Mockito.anyString())).thenReturn(null);
         assertThrows(UsernameNotFoundException.class, () -> userService.loadUserByUsername("nonExistingUser"));
     }
+
+//    @Test
+//    public void Register_CreatesNewUser() throws UserNotFoundException, UsernameExistsException, EmailExistsException {
+//        String firstName = "John";
+//        String lastName = "Doe";
+//        String username = "johndoe";
+//        String email = "johndoe@example.com";
+//        when(userRepository.findUserByUsername(username)).thenReturn(null);
+//        when(userRepository.findByEmail(email)).thenReturn(null);
+//
+//        User user = userService.register(firstName, lastName, username, email);
+//
+//        assertNotNull(user);
+//        assertEquals(firstName, user.getFirstName());
+//        assertEquals(lastName, user.getLastName());
+//        assertEquals(username, user.getUsername());
+//        assertEquals(email, user.getEmail());
+//    }
 }
