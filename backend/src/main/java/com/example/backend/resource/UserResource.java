@@ -25,9 +25,9 @@ import static com.example.backend.constant.SecurityConstant.JWT_TOKEN_HEADER;
 @RequestMapping(path = {"/", "/user"})
 public class UserResource extends ExceptionHandling {
 
-    private UserService userService;
-    private AuthenticationManager authenticationManager;
-    private JwtTokenProvider jwtTokenProvider;
+    private final UserService userService;
+    private final AuthenticationManager authenticationManager;
+    private final JwtTokenProvider jwtTokenProvider;
 
     @Autowired
     public UserResource(UserService userService, AuthenticationManager authenticationManager, JwtTokenProvider jwtTokenProvider) {
@@ -41,7 +41,6 @@ public class UserResource extends ExceptionHandling {
         authenticate(user.getUsername(), user.getPassword());
         User loginUser = userService.findUserByUsername(user.getUsername());
         UserPrincipal userPrincipal = new UserPrincipal(loginUser);
-        //generate the hearders from jwt, since now we have the userprincipal
         HttpHeaders jwtHeader = getJwtHeader(userPrincipal);
         return new ResponseEntity<>(loginUser, jwtHeader, HttpStatus.OK);
     }
