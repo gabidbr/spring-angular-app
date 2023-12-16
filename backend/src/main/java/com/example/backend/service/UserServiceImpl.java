@@ -7,7 +7,6 @@ import com.example.backend.exception.domain.UserNotFoundException;
 import com.example.backend.exception.domain.UsernameExistsException;
 import com.example.backend.repository.UserRepository;
 import jakarta.transaction.Transactional;
-import lombok.extern.java.Log;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -21,10 +20,10 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
+import javax.mail.MessagingException;
 import java.util.Date;
 import java.util.List;
 import java.util.Objects;
-import java.util.concurrent.ExecutionException;
 
 import static com.example.backend.constant.UserImplConstant.*;
 import static com.example.backend.enumeration.Role.ROLE_USER;
@@ -38,13 +37,17 @@ public class UserServiceImpl implements UserService, UserDetailsService {
     private final Logger LOGGER = LoggerFactory.getLogger(getClass());
     private final UserRepository userRepository;
     private final BCryptPasswordEncoder bCryptPasswordEncoder;
-    private LoginAttemptService loginAttemptService;
+    private final LoginAttemptService loginAttemptService;
+
+    private final EmailService emailService;
 
     @Autowired
-    public UserServiceImpl(UserRepository userRepository, BCryptPasswordEncoder bCryptPasswordEncoder, LoginAttemptService loginAttemptService) {
+    public UserServiceImpl(UserRepository userRepository, BCryptPasswordEncoder bCryptPasswordEncoder, LoginAttemptService loginAttemptService,
+                           EmailService emailService) {
         this.userRepository = userRepository;
         this.bCryptPasswordEncoder = bCryptPasswordEncoder;
         this.loginAttemptService = loginAttemptService;
+        this.emailService = emailService;
     }
 
     @Override
@@ -98,6 +101,11 @@ public class UserServiceImpl implements UserService, UserDetailsService {
         user.setProfileImageUrl(getTemporaryProfileImageUrl());
         userRepository.save(user);
         LOGGER.info("New user password: " + password);
+        try {
+            emailService.sendNewPasswordEmail(firstName, password, email);
+        } catch (MessagingException e) {
+            throw new RuntimeException(e);
+        }
         return user;
     }
 
